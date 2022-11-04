@@ -1,0 +1,170 @@
+import nltk
+import inflect
+import string
+import re
+import matplotlib.pyplot as plot_
+from matplotlib.pyplot import figure
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.probability import FreqDist
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize
+from wordcloud import WordCloud
+from collections import Counter
+from collections import OrderedDict
+
+
+def convert_file_to_string(file_path):  
+        with open(file_path, "r", encoding = "utf8") as curr:
+         text =curr.read()
+         text = text.replace("\n", " ").replace("\\r", " ")
+        return text
+
+
+#code for converting text file to string   
+text=convert_file_to_string("NLP_Project_Book.txt")
+def pre_process(string_used):
+
+        start_index = string_used.find('* START OF THE PROJECT ')
+        end_index = string_used.find('* END OF THE PROJECT ')
+        string_used = string_used[start_index:end_index]
+    
+        
+        string_used = string_used.lower()
+    
+      
+        string_used = re.sub("won\\'t", "will not", string_used)
+        string_used = re.sub("can\\'t", "can not", string_used)
+    
+        
+        string_used = re.sub("n\\'t", " not", string_used)
+        string_used = re.sub("\\'re", " are", string_used)
+        string_used = re.sub("\\'s", " is", string_used)
+        string_used = re.sub("\\'d", " would", string_used)
+        string_used = re.sub("\\'ll", " will", string_used)
+        string_used = re.sub("\\'t", " not", string_used)
+        string_used = re.sub("\\'ve", " have", string_used)
+        string_used = re.sub("\\'m", " am", string_used)
+        
+        
+       
+        string_used = re.sub("[^\\w\\s]", "", string_used)
+        string_used = re.sub("_", "", string_used)
+    
+       
+        string_used = re.sub("chapter [0-9]{1,3}", "", string_used)
+
+       
+        string_used = re.sub("[\\s]+", " ", string_used)
+       
+        return string_used
+
+
+
+p = inflect.engine()
+ 
+
+def convert_number(text):
+   
+    temp_str = text.split()
+
+    new_string = []
+ 
+    for word in temp_str:
+        # if word is a digit, convert the digit
+        # to numbers and append into the new_string list
+        if word.isdigit():
+            temp = p.number_to_words(word)
+            new_string.append(temp)
+ 
+        # append the word as it is
+        else:
+            new_string.append(word)
+ 
+    # join the words of new_string to form a string
+    temp_str = ' '.join(new_string)
+    return temp_str
+
+#Preprocessed text
+text=pre_process(text)
+p = inflect.engine()
+text=convert_number(text)
+before_stop_words=word_tokenize(text)
+T1_frequency_distribution = FreqDist(before_stop_words)
+T1_frequency_distribution_org = T1_frequency_distribution
+T1_frequency_distribution_org.plot(40)
+dictionary = Counter(T1_frequency_distribution)
+cloud = WordCloud(max_font_size = 60, max_words = 80, background_color = "white").generate_from_frequencies(dictionary)
+plot_.figure(figsize = (20, 20))
+plot_.imshow(cloud, interpolation = 'bilinear')
+plot_.axis('off')
+plot_.show()
+remove_these = set(stopwords.words('english'))
+Cleaned_T1 = [w for w in before_stop_words if not w in remove_these]
+T1_frequency_distribution_withoutstopwords = FreqDist(Cleaned_T1)
+dictionary = Counter(Cleaned_T1)
+cloud = WordCloud(max_font_size = 60, max_words = 80, background_color = "white").generate_from_frequencies(dictionary)
+plot_.figure(figsize = (20, 20))
+plot_.imshow(cloud, interpolation = 'bilinear')
+plot_.axis('off')
+plot_.show()
+length_frequency_T1 = {}
+for i, j in T1_frequency_distribution_org.items():
+        x = len(i)
+        if(x in length_frequency_T1):
+            length_frequency_T1[x] += j
+        else:
+            length_frequency_T1[x] = j
+
+            
+length_frequency_T1 = OrderedDict(sorted(length_frequency_T1.items()))
+Length_frequency_T1_withoutstopwords={}
+for i, j in T1_frequency_distribution_withoutstopwords.items():
+        x = len(i)
+        if(x in Length_frequency_T1_withoutstopwords):
+            Length_frequency_T1_withoutstopwords[x] += j
+        else:
+            Length_frequency_T1_withoutstopwords[x] = j
+
+            
+Length_frequency_T1_withoutstopwords = OrderedDict(sorted(Length_frequency_T1_withoutstopwords.items()))
+
+
+tokenized = sent_tokenize(text)
+for i in tokenized:
+     
+    wordsList = nltk.word_tokenize(i)
+   
+    wordsList = [w for w in wordsList if not w in remove_these]
+ 
+    tagged = nltk.pos_tag(wordsList)
+ 
+    print(tagged)
+words= [word_tokenize(i) for i in sent_tokenize(text)]
+pos_tag= [nltk.pos_tag(i) for i in words]
+
+
+tag_frequency_distribution = {}
+for sent in pos_tag:
+    for word, tag in sent:
+        if tag in tag_frequency_distribution:
+            tag_frequency_distribution[tag] += 1
+        else:
+            tag_frequency_distribution[tag] = 1
+tag_frequency_distribution = OrderedDict(sorted(tag_frequency_distribution.items(), key=lambda item: item[1], reverse = True))
+print(tag_frequency_distribution)
+
+
+# Plotting tag frequency distribution of T2
+plot_.figure(figsize = (20, 20))
+
+plot_.bar(range(len(tag_frequency_distribution)), list(tag_frequency_distribution.values()), align = 'center')
+
+plot_.xticks(range(len(tag_frequency_distribution)), list(tag_frequency_distribution.keys()))
+font = {'family':'sans','color':'darkred','size':25}
+
+plot_.title("Tag frequency distribution of T2", fontdict = font, loc = "center")
+plot_.xlabel("Tags", fontdict = font)
+plot_.ylabel("Frequency", fontdict = font)
+
+plot_.show()
